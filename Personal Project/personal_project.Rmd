@@ -1,0 +1,137 @@
+---
+title: "Personal Task: Films Research"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "2022-11-27"
+---
+
+---
+---
+subtitle: "By Viktor Tytarenko **November 2022**"
+---
+
+### Dataset description
+
+<font size="3"> This is data research about films from imdb dataset
+In this work, I used the dataset from the website https://www.imdb.com/interfaces/. It
+the most popular site with reviews of viewers. The data is compiled as follows
+information: film id, rating, director's age, year of release, length of film title, filter
+"for adults", duration in minutes, genre and filter whether the movie was released in the year
+economic crisis. The size of the dataset is 3142x9
+</font>
+
+**Import some libraries**
+
+```{r}
+library("ggplot2") 
+library("logspline")
+library("reshape")
+```
+
+### Data reading
+
+<font size="3">**Firstly lets read data we have and look on it.**</font>
+
+```{r}
+# Data with films_ids, rates, ages of Directors, films years..
+films <- read.csv("./results_film_data.csv", header = TRUE)
+films
+```
+
+<font size="3">On the table above you can see such data: ids of films on the iMDB site, films rates, directors age when film was produced, the year of films coming out, length of films Title, whether it is content for adults or not, genere and runtime of films in minutes, is film recorded in crisis year..</font>
+
+<font size="3">Lets split films into two categories: with high rates and with not high. Furthermore, we need to divide films into grops with popular gener, and upopular. We discovered which generes are the most popular, and got that "Action", "Comedy", "Drama", "Adventure", "Crime", "Biography", "Fantasy", "Thriller" are the most popular.</font>
+
+```{r}
+films$veryHighRates <- films$films.rate >= 8
+summary(films)
+```
+
+<font size="3"> Above is shown a lot of statistic about films. Below we will build graphs, but now we can see such intresting facts: median and mean ages of directors are 45 y.o. and 1st Qu is 39. So that we can make conclusion, that young people can't record famous films. We wrote famous, becouse our data contains only that films, whisch has more than 39999 votes. Also, we can see that the longest film duration is almost 6 hours. And mean is about 2 hours - standard duration of film. Also, all films with big number of votes are not content for adults. Popular geners you can see above</font>.
+
+### Distribution of film rate.
+
+<font size="3">Now build histogram of rates. 
+average movie rating 6.88, median 6.9. </font>
+
+```{r}
+ggplot(data = films, aes(x = films$films.rate)) +
+  geom_histogram(aes(y =..density.., fill = ..count..), bins=20) +
+  labs(title="Distribution of films rate", x="rates", y="frequency") +
+  labs(title="Distribution of films rate")
+```
+
+From graph above we can see that there almost are not films with rates less than 4. But, there also almost not films with rates bigger than 9.
+
+### Distribution of movie production. 
+
+<font size="3">Since 1996, there has been a rapid growth of film production, which is easy to understand transition to digital cinema equipment.</font>
+
+
+```{r}
+films["Count"] <-1
+sum_years <- aggregate(films$Count, list(films$films.year), function(x) sum(x))
+
+
+ggplot(data = sum_years, aes(x = sum_years$Group.1, y=sum_years$x)) +
+  geom_col()+
+  labs(title="Distribution of films rate", x="year", y="number") +
+  labs(title="Distribution of movie production")
+```
+
+### Distribution of Duration.
+<font size="3">
+Not many films were made before the 1950s, so the values are extreme and not significant (outliers).In general, we see a tendency to increase the average duration until the 1990s and now it is gradual reduction. In general, the average duration is 114.1 minutes, the median is 111 minutes. </font>
+
+```{r}
+duration <- aggregate(films$runtimeMinutes, list(films$films.year), function(x) mean(x))
+
+
+ggplot(data = duration, aes(x = duration$Group.1, y=duration$x)) +
+  geom_col()+
+  labs(title="Distribution of films rate", x="year", y="duration") +
+  labs(title="Average Duration per Year")
+
+```
+
+### Distribution of Genres.
+
+```{r}
+genresbyyears <- read.csv("./genresbyyears.csv",comment.char = "#",sep = ",")
+summary(genresbyyears)
+```
+
+<font size="3">Here is data about movie production by genres. Documentary is the most popular genre and Film Noir has the smallest popularity and almost die after 60's (because of change in technology of filmmaking. In 60's color film replace black and white)
+
+```{r}
+mdata=melt(genresbyyears,id=c("Year"))
+ggplot(mdata, aes(x=Year,y=value,group=variable,fill=variable)) + geom_area(position = "stack", colour="black")
+```
+
+```{r}
+ggplot(mdata, aes(x=Year,y=value,group=variable,fill=variable)) + geom_area(position = "fill", colour="black")
+```
+
+### Most popular words in titles.
+<font size="3">Top words: love, story, life </font>
+```{r}
+commonwords <- read.csv("./commonwords.csv")
+ggplot(data = commonwords, aes(x = commonwords$Word, y=commonwords$Count)) +
+  geom_col()+
+  labs(title="Distribution of films rate", x="word", y="number") +
+  labs(title="Most popular words in titles")
+```
+
+### Duration by genres.
+<font size="3">Western -- the longest</font>
+```{r}
+durationbygenres <- aggregate(films$runtimeMinutes, list(films$geners), function(x) mean(x))
+
+ggplot(data = durationbygenres , aes(x = durationbygenres$Group.1, y=durationbygenres$x)) +
+  geom_col()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs(title="Distribution of films rate", x="genre", y="duration") +
+  labs(title="Average duration by genres")
+```
+
